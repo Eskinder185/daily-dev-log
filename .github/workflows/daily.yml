@@ -1,0 +1,67 @@
+
+name: Daily GitHub Contribution
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+      timezone: "America/New_York"
+
+  # Allow manual testing
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  daily-contribution:
+    name: Update Daily Activity
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Download repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Configure Git
+      - name: Configure Git
+        run: |
+          git config user.name "Eskinder185"
+          git config user.email "eskewabe185@gmail.com"
+
+      # Step 3: Generate daily activity
+      - name: Update daily activity log
+        run: |
+          mkdir -p activity
+
+          DATE=$(TZ=America/New_York date +'%Y-%m-%d')
+          TIME=$(TZ=America/New_York date +'%H:%M:%S %Z')
+
+          cat > activity/latest.md <<EOF
+          # Daily GitHub Activity
+
+          **Date:** $DATE
+          **Last updated:** $TIME
+
+          Automated daily repository activity.
+          EOF
+
+          echo "$DATE - Automated activity update" \
+            >> activity/history.log
+
+      # Step 4: Commit changes
+      - name: Commit and push
+        run: |
+          git add activity/
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: daily contribution $(TZ=America/New_York date +'%Y-%m-%d')"
+            git push
+          fi
+
+      # Step 5: Display completion
+      - name: Show status
+        run: |
+          echo "Daily activity workflow completed."
+          git log -1 --oneline
